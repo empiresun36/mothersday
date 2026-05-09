@@ -746,7 +746,7 @@
 
     <div class="quota">
       <span class="dot"></span>
-      <span>採報名制 · 限量 40 組</span>
+      <span>採報名制 · 限量 40 組人（每組限1-2人）</span>
       <span class="dot"></span>
     </div>
   </header>
@@ -779,7 +779,7 @@
         </div>
         <div>
           <div class="label">Place · 地點</div>
-          <div class="value">一樓車道後方花園（遇雨天改公設三樓媽媽教室）</div>
+          <div class="value">一樓車道後方花園</div>
         </div>
       </div>
     </div>
@@ -890,6 +890,45 @@ function submitToGoogleForm(name, phone, unit) {
   // 用 no-cors 靜默送出，不等回應、不影響使用者
   fetch(url, { method: 'POST', mode: 'no-cors', body })
     .catch(() => {}); // 失敗也不提示，不影響活動
+}
+/* ========================================================================= */
+
+/* =========================================================================
+   報名時段管制：5/11 開放、5/16 14:00 自動關閉
+   ========================================================================= */
+const REG_START = new Date("2026-05-11T00:00:00+08:00");
+const REG_END   = new Date("2026-05-16T14:00:00+08:00");
+
+function checkRegistrationWindow() {
+  const now = new Date();
+  const submitBtn = document.getElementById("submitBtn");
+  const inputs = document.querySelectorAll("#regForm input");
+
+  if (now < REG_START) {
+    inputs.forEach(i => i.disabled = true);
+    submitBtn.disabled = true;
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+    return false;
+  } else if (now >= REG_END) {
+    inputs.forEach(i => i.disabled = true);
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = "報名已結束 🌸";
+    return false;
+  }
+  return true;
+}
+
+function updateCountdown() {
+  const now = new Date();
+  const diff = REG_START - now;
+  if (diff <= 0) { location.reload(); return; }
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff % 86400000) / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  const btn = document.getElementById("submitBtn");
+  btn.innerHTML = `⏳ 報名 5/11 開放　${d} 天 ${h.toString().padStart(2,'0')} : ${m.toString().padStart(2,'0')} : ${s.toString().padStart(2,'0')}`;
 }
 /* ========================================================================= */
 
@@ -1015,6 +1054,7 @@ for (let i = 0; i < 4; i++) setTimeout(createPetal, i * 600);
 
 // 初始化
 updateCountDisplay();
+checkRegistrationWindow();
 </script>
 
 </body>
