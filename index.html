@@ -779,7 +779,7 @@
         </div>
         <div>
           <div class="label">Place · 地點</div>
-          <div class="value">一樓車道後方花園</div>
+          <div class="value">一樓車道後方花園（遇雨天改公設三樓媽媽教室）</div>
         </div>
       </div>
     </div>
@@ -845,7 +845,7 @@
 
       <div class="field">
         <label>戶 號 / 門 牌 <span class="required">*</span></label>
-        <input type="text" id="address" placeholder="例：A棟 12 樓之 3 / 5號" required maxlength="30"/>
+        <input type="text" id="address" placeholder="例：C3-37F" required maxlength="30"/>
       </div>
 
       <button type="submit" class="submit-btn" id="submitBtn">
@@ -867,30 +867,30 @@
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12l5 5L20 7"/></svg>
     </div>
     <h3>確認報名資訊</h3>
-    <p>請確認以下資料無誤後，<br/>將為您開啟 Google 表單完成最終登記</p>
+    <p>請確認以下資料無誤後送出，<br/>系統將自動為您完成報名登記</p>
     <div class="summary" id="summary"></div>
     <div class="modal-buttons">
       <button class="btn-cancel" id="btnCancel">返回修改</button>
-      <button class="btn-confirm" id="btnConfirm">確認並前往</button>
+      <button class="btn-confirm" id="btnConfirm">確 認 送 出</button>
     </div>
   </div>
 </div>
 
 <script>
 /* =========================================================================
-   ⚠️ 重要設定：請將下方 GOOGLE_FORM_URL 替換為您的 Google Form 連結
-   並可選擇性設定 entry ID 以便預填欄位
+   Google Form 靜默送出（使用者不會跳離本頁）
    ========================================================================= */
-const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeCMba17S3N_bNX2QY194ScMbvnmAF0pTMaZscI-5Zhc6CtXg/viewform";
-
-// 若想自動預填 Google Form 欄位，請填入對應的 entry ID
-// 取得方式：在 Google Form 點選右上角「⋮」→「取得預先填入的連結」
-const ENTRY_IDS = {
-  name: "entry.400886445",      // 例：'entry.123456789'
-  phone: "entry.685481006",     // 例：'entry.234567890'
-  address: "entry.284768604"    // 例：'entry.345678901'
-};
-
+function submitToGoogleForm(name, phone, unit) {
+  const FORM_ID = '1FAIpQLSeCMba17S3N_bNX2QY194ScMbvnmAF0pTMaZscI-5Zhc6CtXg';
+  const url = 'https://docs.google.com/forms/d/e/' + FORM_ID + '/formResponse';
+  const body = new FormData();
+  body.append('entry.400886445',  name);   // 姓名
+  body.append('entry.685481006', phone);   // 電話
+  body.append('entry.284768604', unit);    // 戶號
+  // 用 no-cors 靜默送出，不等回應、不影響使用者
+  fetch(url, { method: 'POST', mode: 'no-cors', body })
+    .catch(() => {}); // 失敗也不提示，不影響活動
+}
 /* ========================================================================= */
 
 // 前端計數（使用 localStorage 模擬，實際以 Google Form 後台為準）
@@ -947,25 +947,43 @@ document.getElementById("btnConfirm").addEventListener("click", () => {
   const phone = document.getElementById("phone").value.trim();
   const address = document.getElementById("address").value.trim();
 
-  // 構造 Google Form 連結（含預填參數）
-  let url = GOOGLE_FORM_URL;
-  const params = [];
-  if (ENTRY_IDS.name)    params.push(`${ENTRY_IDS.name}=${encodeURIComponent(name)}`);
-  if (ENTRY_IDS.phone)   params.push(`${ENTRY_IDS.phone}=${encodeURIComponent(phone)}`);
-  if (ENTRY_IDS.address) params.push(`${ENTRY_IDS.address}=${encodeURIComponent(address)}`);
-  if (params.length > 0) {
-    url += (url.includes("?") ? "&" : "?") + params.join("&") + "&usp=pp_url";
-  }
+  // 靜默送出到 Google Form
+  submitToGoogleForm(name, phone, address);
 
   incrementCount();
   overlay.classList.remove("show");
 
-  // 開啟 Google Form
-  window.open(url, "_blank");
+  // 顯示成功訊息
+  showSuccessMessage();
 
   // 重置表單
   document.getElementById("regForm").reset();
 });
+
+// 報名成功訊息
+function showSuccessMessage() {
+  const success = document.createElement("div");
+  success.className = "modal-overlay show";
+  success.innerHTML = `
+    <div class="modal">
+      <div class="icon-circle" style="background: var(--sage-deep);">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12l5 5L20 7"/></svg>
+      </div>
+      <h3>報名成功</h3>
+      <p>感謝您的報名 🌸<br/>期待 5/16 與您相會於花園<br/>共度溫馨午後時光</p>
+      <div class="modal-buttons">
+        <button class="btn-confirm" style="flex:1;" onclick="this.closest('.modal-overlay').remove()">關 閉</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(success);
+  // 點背景也可關閉
+  success.addEventListener("click", (e) => {
+    if (e.target === success) success.remove();
+  });
+  // 6 秒後自動關閉
+  setTimeout(() => success.remove(), 6000);
+}
 
 // 點擊 overlay 關閉
 overlay.addEventListener("click", (e) => {
